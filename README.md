@@ -1,6 +1,8 @@
-# fancy-Lets
+# fancy-lets
 
 A Clojure library that provides short-circuiting lets. These macros allow you to perform validation in-line between each binding. See `fancy-lets.examples` for examples.
+
+[![Clojars Project](https://img.shields.io/clojars/v/fancy-lets.svg)](https://clojars.org/fancy-lets)
 
 ## Rationale
 
@@ -15,7 +17,7 @@ Sometimes validation needs to be performed between each step of a function. Refe
     :error))
   :error))
 ```
-This pattern is problematic. This snippet is a fairly simple operation, but it is cumbersome and difficult to read. This library provides `let-catch` and `let-catch-2` to alleviate these problems.
+This pattern is problematic. This snippet is a fairly simple operation, but it is cumbersome and difficult to read. This library provides `let-catch` and `let-catch-all` to alleviate these problems.
 
 ## Usage
 
