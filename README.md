@@ -41,12 +41,25 @@ Note that this function behaves similarly to the earlier example, but the patter
 
 Assuming that `a`, `b` and `c` were all not failure objects, the statement above would return `c`. If `a` was a failure, however, the statement would short-circuit and call `handle-failure` on `a`. Since the statement was short-circuited, the functions `g` and `h` were never even called.
 
-Note that you do not need to put in any validating statements. You could simply write
+Note that you do not need to put in any validating statements. You could write the following
 ```
-(let-catch [a 1 b 2 c 3] 
+(let-catch 
+ [a 1 b 2 c 3] 
  (+ a b c))
 ```
 which, as you might expect, would return 6.
+
+Similarly, you do not need to include validation statements for every line, or even bindings for that matter. Both of the following would be okay implementations of `let-catch`'s bindings:
+```
+[a (f)
+ :validate (number? a) :else "Not a number"
+ :validate (pos? a)    :else "Not positive"
+ b (g a)]
+```
+```
+[:validate (pos? 1) :else "Something is wrong with the universe."
+ :validate (neg? 1) :else "This is expected"]
+```
 
 ### `let-catch-all`
 
