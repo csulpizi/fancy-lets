@@ -21,32 +21,61 @@ This pattern is problematic. This snippet is a fairly simple operation, but it i
 
 ### `let-catch`
 
-`let-catch` is used similarly to let, except you provide it with a predicate function `pred` and a failure function `fail-f`. Each binding is handled one-by-one, and the bound values are checked after being evaluated to see if the value matches the condition defined by pred. If a bound value fails, the statement short circuits and the `fail-f` function is called on that value. On the other hand, if all of the values pass the predicate, everything will continue as it would in a regular `let` statement.
+Args: `bindings & body`
 
-This is particularly useful if you have a custom failure object. Imagine that you have functions `success?` which checks that an object is not a failure object, and `handle-failure` which performs some action based on that failure. Then you could write the following statement, for example:
+`let-catch` is used similarly to let, except you can provide it validation expressions in-line in the form `:validate (expression) :else (expression)`. The bindings and validations are performed in order. If any of the validations fail, the `:else` clause of that validation is called and the `let-catch` statement short-circuits. Otherwise, the statement continues as expected. 
+
+Let's say you have functions, `f`, `g` and `h` that return failure objects when something went wrong, a `success?` function that checks that a return object is not a failure, and a `log-failure` function logs out any errors. You could write the following, for example:
 
 ```
-(let-catch success? handle-failure
-   [a (f)
-    b (g)
-    c (h a b)]
-   c)
+(let-catch
+ [a (f)
+  :validate (success? a) :else (log-failure a)
+  b (g)
+  :validate (success? b) :else (log-failure b)
+  c (h a b)
+  :validate (success? c) :else (log-failure c)]
+ c)
 ```
 Note that this function behaves similarly to the earlier example, but the pattern is much cleaner and easier to read.
 
-Assuming that `a`, `b` and `c` were all not failure objects, the statement above would return `c`. If `a` was a failure, however, the statement would short-circuit and call `handle-failure` on `a`. Since the statement was short circuited, the functions `g` and `h` were never even called.
+Assuming that `a`, `b` and `c` were all not failure objects, the statement above would return `c`. If `a` was a failure, however, the statement would short-circuit and call `handle-failure` on `a`. Since the statement was short-circuited, the functions `g` and `h` were never even called.
 
-### `let-catch-2`
+Note that you do not need to put in any validating statements. You could simply write
+```
+(let-catch [a 1 b 2 c 3] 
+ (+ a b c))
+```
+which, as you might expect, would return 6.
 
-`let-catch-2` is a more specialized version of `let-catch`. Instead of feeding it a single predicate and a single failure function, each bound value is given its own predicate and its own failure function. This gives you more control over exactly how your binding statement behaves. You could write the following statement, for example:
+### `let-catch-all`
+
+Args: `pred fail-f bindings & body`
+
+`let-catch-all` is a more generalized version of `let-catch`. Instead of providing validation statements in specific spots, you provide a `pred` and a `fail-f` at the start, and each bound value is evaluated. 
+
+So something like
 ```
-(let-catch-2 [a         (f)
-              :validate (pos-int? a)
-              :else     (println "Failure. `a` is not a positive integer.")
-              b         (g)
-              c         (h a b)
-              :validate (success? c)
-              :else     (handle-failure c)]
-   c)
-```
-The statement below would short-circuit if a 
+(let-catch-all 
+ pos-int? 
+ (fn [x] (println "ERROR!" x "is not a positive integer")
+ [a (f)
+  b (g)
+  c (+ a b)]
+ c)
+ ```
+ would behave identically to
+ ```
+ (let-catch 
+  [a (f)
+   :validate (pos-int? a)
+   :else (println "ERROR!" a "is not a positive integer")
+   b (g)
+   :validate (pos-int? b)
+   :else (println "ERROR!" b "is not a positive integer")
+   c (+ a b)
+   :validate (pos-int? c)
+   :else (println "ERROR!" c "is not a positive integer")]
+  c)
+ ```
+This can be useful if you want to validate each form with the same pred and the same failure handler. Perhaps a good use case would be when using a custom failure framework.
