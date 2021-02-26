@@ -17,7 +17,7 @@ Sometimes validation needs to be performed between each step of a function. Refe
     :error))
   :error))
 ```
-This pattern is problematic. This snippet is a fairly simple operation, but it is cumbersome and difficult to read. This library provides `let-catch` and `let-catch-2` to alleviate these problems.
+This pattern is problematic. This snippet is a fairly simple operation, but it is cumbersome and difficult to read. This library provides `let-catch` and `let-catch-all` to alleviate these problems.
 
 ## Usage
 
