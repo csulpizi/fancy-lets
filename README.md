@@ -2,6 +2,8 @@
 
 A Clojure library that provides short-circuiting lets. These macros allow you to perform validation in-line between each binding. See `fancy-lets.examples` for examples.
 
+[![Clojars Project](https://img.shields.io/clojars/v/fancy-lets.svg)](https://clojars.org/fancy-lets)
+
 ## Rationale
 
 Sometimes validation needs to be performed between each step of a function. Refer to the following case for example:
