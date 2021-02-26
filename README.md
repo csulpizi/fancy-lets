@@ -94,3 +94,20 @@ So something like
   c)
  ```
 This can be useful if you want to validate each form with the same pred and the same failure handler. Perhaps a good use case would be when using a custom failure framework.
+
+### Extending these macros
+
+Let's say you have a custom failure framework with the predicate `success?` and `handle-failure`, and where some of your functions return your custom failure object. You could write a macro that simplifies `let-catch-all`:
+```
+(defmacro let-catch-failures [bindings & body]
+    `(let-catch-all success? handle-failure
+                     bindings ~@body)
+```
+Which would simplify your code base even further. Now you could simple write.
+```
+(let-catch-failures 
+ [a (f)
+  b (g)
+  c (h a b)]
+ c)
+ ```
