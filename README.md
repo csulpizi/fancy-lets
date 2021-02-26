@@ -101,7 +101,7 @@ Let's say you have a custom failure framework with the predicate `success?` and 
 ```
 (defmacro let-catch-failures [bindings & body]
     `(let-catch-all success? handle-failure
-                     bindings ~@body)
+                   ~bindings ~@body)
 ```
 Which would simplify your code base even further. Now you could simple write.
 ```
