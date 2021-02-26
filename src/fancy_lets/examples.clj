@@ -1,5 +1,5 @@
 (ns fancy-lets.examples
-  (:require [fancy-lets.core :refer [let-catch let-catch-2]]))
+  (:require [fancy-lets.core :refer [let-catch let-catch-all]]))
 
 ;; Example:
 ;;  Our program needs to access and update a datastore.
@@ -64,14 +64,14 @@
 ;; => ERROR: Customer Dale does not exist.
 
 ;; ==============================================================
-;; Instead we can use `let-catch` to make it more streamlined.
+;; Instead we can use `let-catch-all` to make it more streamlined.
 ;; ==============================================================
 (defn adjust-customers-balance! [name amt]
-  (let-catch success? print-failure-detail
-             [id          (get-customer-id name)
-              new-balance (subtract-balance! id amt)]
-             (println "Success! New balance in" (str name "'s")
-                      "account is" new-balance)))
+  (let-catch-all success? print-failure-detail
+                 [id          (get-customer-id name)
+                  new-balance (subtract-balance! id amt)]
+                 (println "Success! New balance in" (str name "'s")
+                          "account is" new-balance)))
 
 (reset! customer-balances init-customer-balances)
 (adjust-customers-balance! "Albert" 7)
@@ -82,21 +82,21 @@
 ;; => ERROR: Customer Dale does not exist.
 
 ;; ==============================================================
-;; Below is an example of using `let-catch-2` to perform
-;; the same operation slightly similarly. Note that `let-catch-2`
-;; allows us to perform validation on a line by line basis
+;; Below is an example of using `let-catch` to perform
+;; the same operation slightly similarly. Note that `let-catch`
+;; allows us to perform validation as we see fit
 ;; Note that in this example we can validate that the balance is
 ;; sufficient in-line
 ;; ==============================================================
 (defn adjust-customers-balance! [name amt]
-  (let-catch-2
-      [{:as id          :expr (get-customer-id name)
-        :pred success? :fail-f print-failure-detail}
-       {:as balance     :expr (get-balance id)
-        :pred success? :fail-f print-failure-detail}
-       {:as new-balance :expr (- balance amt)
-        :pred nat-int? :fail-f
-        (fn [_] (println "ERROR: Customer" id "does not have enough balance."))}]
+  (let-catch
+      [id          (get-customer-id name)
+       :validate   (success? id)      :else (print-failure-detail id)
+       balance     (get-balance id)
+       :validate   (success? balance) :else (print-failure-detail balance)
+       new-balance (- balance amt)
+       :validate   (nat-int? new-balance) :else
+        (println "ERROR: Customer" id "does not have enough balance.")]
     (println "Success! New balance in" (str name "'s") "account is" new-balance)))
 
 (reset! customer-balances init-customer-balances)
@@ -109,26 +109,21 @@
 
 ;; =============================================================
 ;; Lastly, here is just a very quick example that demonstrates
-;; `let-catch-2`'s functionality if you don't give every row
-;; all keys. Note that by default `:pred` is (constantly true),
-;; which means that if you do not provide `:pred` for a row that
-;; row will always "succeed" and continue
+;; `let-catch`'s flexibility
 ;; =============================================================
 (defn square-then-divide [x y]
-  (let-catch-2 [{:as x :expr x
-                 :pred number?    :fail-f #(str % " is not a number")}
-                {:as x :expr (* x x)}
-                {:as y :expr y
-                 :pred number?    :fail-f #(str % " is not a number")}
-                {:as y :expr (inc y)
-                 :pred #(not= 0 %) :fail-f (constantly "Cannot divide by 0")}]
-    (/ x y)))
+  (let-catch [:validate (number? x) :else (println x "is not a number")
+              :validate (number? y) :else (println y "is not a number")
+              x (* x x)
+              y (inc y)
+              :validate (not= 0 y) :else (println "Cannot divide by 0")]
+    (println (/ x y))))
 
-(println (square-then-divide 7 2))
+(square-then-divide 7 2)
 ;; => 49/3
-(println (square-then-divide :b 2))
+(square-then-divide :b 2)
 ;; => :b is not a number
-(println (square-then-divide 7 :c))
+(square-then-divide 7 :c)
 ;; => :c is not a number
-(println (square-then-divide 7 -1))
+(square-then-divide 7 -1)
 ;; => Cannot divide by 0
